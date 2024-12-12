@@ -19,4 +19,5 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('', lambda r: Response.ok(message="Service Running ..")),
     path('api/v_card_report/', include('v_card_report.urls')),
+    path('api/v_card_employee/', include('v_card_employee.urls')),
 ]
