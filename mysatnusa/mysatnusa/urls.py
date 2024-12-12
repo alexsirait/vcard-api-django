@@ -17,10 +17,6 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('api/swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-   #  path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
-   #  path('admin/', admin.site.urls),
     path('', lambda r: Response.ok(message="Service Running ..")),
-   #  path('api/cargo_lift/', include('cargo_lift.urls')),
-   #  path('api/setting_module_cargo_lift/', include('setting_module_cargo_lift.urls')),
+    path('api/v_card_report/', include('v_card_report.urls')),
 ]
