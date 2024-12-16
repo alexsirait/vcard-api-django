@@ -80,3 +80,108 @@ def generate_vcard(request):
     except Exception as e:
         log_exception(request, e)
         return Response.badRequest(request, message=f"An error occurred: {str(e)}", messagetype="E")
+    
+@jwtRequired
+@csrf_exempt
+def chart_monthly(request, vcard_uuid):
+    try:
+        validate_method(request, "GET")
+        with transaction.atomic():
+
+            start_date = request.GET.get('start_date', '')
+            end_date = request.GET.get('end_date', '')
+            
+            chart_monthly = execute_query(
+                            sql_query=
+                            """
+                            SELECT * FROM vcard.chart_monthly(%s, %s, %s);
+                            """,
+                            params=(vcard_uuid, start_date, end_date,)
+                        )
+            return Response.ok(data=chart_monthly, message="List data telah tampil", messagetype="S")
+    except Exception as e:
+        return Response.badRequest(request, message=str(e), messagetype="E")
+
+@jwtRequired
+@csrf_exempt
+def chart_daily(request, vcard_uuid):
+    try:
+        validate_method(request, "GET")
+        with transaction.atomic():
+
+            year = request.GET.get('year', '')
+            month = request.GET.get('month', '')
+            
+            chart_daily = execute_query(
+                            sql_query=
+                            """
+                            SELECT * FROM vcard.chart_daily(%s, %s, %s);
+                            """,
+                            params=(vcard_uuid, year, month,)
+                        )
+            return Response.ok(data=chart_daily, message="List data telah tampil", messagetype="S")
+    except Exception as e:
+        return Response.badRequest(request, message=str(e), messagetype="E")
+
+@jwtRequired
+@csrf_exempt
+def chart_location(request, vcard_uuid):
+    try:
+        validate_method(request, "GET")
+        with transaction.atomic():
+
+            start_date = request.GET.get('start_date', '')
+            end_date = request.GET.get('end_date', '')
+            
+            chart_location = execute_query(
+                            sql_query=
+                            """
+                            SELECT * FROM vcard.chart_location(%s, %s, %s);
+                            """,
+                            params=(vcard_uuid, start_date, end_date,)
+                        )
+            return Response.ok(data=chart_location, message="List data telah tampil", messagetype="S")
+    except Exception as e:
+        return Response.badRequest(request, message=str(e), messagetype="E")
+
+@jwtRequired
+@csrf_exempt
+def chart_total_qty(request, vcard_uuid):
+    try:
+        validate_method(request, "GET")
+        with transaction.atomic():
+
+            start_date = request.GET.get('start_date', '')
+            end_date = request.GET.get('end_date', '')
+            
+            chart_total_qty = execute_query(
+                            sql_query=
+                            """
+                            SELECT * FROM vcard.total_scan(%s, %s, %s);
+                            """,
+                            params=(vcard_uuid, start_date, end_date,)
+                        )
+            return Response.ok(data=chart_total_qty, message="List data telah tampil", messagetype="S")
+    except Exception as e:
+        return Response.badRequest(request, message=str(e), messagetype="E")
+
+@jwtRequired
+@csrf_exempt
+def pie_chart(request, vcard_uuid):
+    try:
+        validate_method(request, "GET")
+        with transaction.atomic():
+
+            start_date = request.GET.get('start_date', '')
+            end_date = request.GET.get('end_date', '')
+            
+            pie_chart = execute_query(
+                            sql_query=
+                            """
+                            SELECT * FROM vcard.chart_event(%s, %s, %s);
+                            """,
+                            params=(vcard_uuid, start_date, end_date,)
+                        )
+            return Response.ok(data=pie_chart, message="List data telah tampil", messagetype="S")
+    except Exception as e:
+        return Response.badRequest(request, message=str(e), messagetype="E")
