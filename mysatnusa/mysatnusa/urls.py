@@ -20,4 +20,5 @@ urlpatterns = [
     path('', lambda r: Response.ok(message="Service Running ..")),
     path('api/v_card_report/', include('v_card_report.urls')),
     path('api/v_card_employee/', include('v_card_employee.urls')),
+    path('api/v_card_detail/', include('v_card_detail.urls'))
 ]
