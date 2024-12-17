@@ -8,6 +8,7 @@ urlpatterns = [
     path('detail_event/<str:event_uuid>', views.detail_event, name='detail_event'),
     path('insert_vcard', views.insert_vcard, name='insert_vcard'),
     path('update_vcard/<str:vcard_uuid>', views.update_vcard, name='update_vcard'),
+    path('default_profile_pic/<str:vcard_uuid>', views.default_profile_pic, name='default_profile_pic'),
     # path('delete_vcard/<str:vcard_uuid>', views.delete_vcard, name='delete_vcard'),
 ]   
 

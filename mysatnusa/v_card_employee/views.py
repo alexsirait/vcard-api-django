@@ -124,6 +124,7 @@ def update_vcard(request, vcard_uuid):
         validate_method(request, "PUT")
         with transaction.atomic():
             json_data = json.loads(request.body)
+            vcard_id = get_value(table_name="vcard.vcards", filters={"vcard_uuid": vcard_uuid} ,column_name="vcard_id", type='UUID')
             rules = {
                 'employee_name': 'required|string|min:3|max:255',
                 'employee_badge': 'required|string|min:3|max:10',
@@ -133,8 +134,12 @@ def update_vcard(request, vcard_uuid):
             validation_errors = validate_request(json_data, rules)
             if validation_errors:
                 return Response.badRequest(request, message=validation_errors, messagetype="E")
+            
+            if exists_data(table_name="vcard.vcards", filters={ "vcard_id": vcard_id, "employee_name": json_data['employee_name']}):
+                    return Response.badRequest(request, message="Duplicated name", messagetype="D")
+            if exists_data(table_name="vcard.vcards", filters={ "vcard_id": vcard_id, "employee_badge": json_data['employee_badge']}):
+                return Response.badRequest(request, message="Duplicated badge", messagetype="D")
 
-            vcard_id = get_value(table_name="vcard.vcards", filters={"vcard_uuid": vcard_uuid} ,column_name="vcard_id", type='UUID')
 
             update_data(
                 table_name="vcard.vcards",
@@ -251,12 +256,12 @@ def list_event(request,vcard_uuid):
         validate_method(request, "GET")
         with transaction.atomic():
             search = request.GET.get('search', '')
-            vcard_id = get_value(table_name='vcard.vcards',filters={"vcard_uuid":vcard_uuid},column_name="vcard_id")
+            vcard_id = get_value(table_name='vcard.vcards',filters={"vcard_uuid":vcard_uuid},column_name="vcard_id",type="UUID")
             
             data  = get_data(table_name="vcard.v_event", filters={"vcard_id": vcard_id},search=search,search_columns=['event_name','event_location'],order_by='event_date')
             
             pagi = paginate_data(request,data)
-        return Response.ok(data=pagi, message="Deleted!", messagetype="S")
+        return Response.ok(data=pagi, message="List data telah tampil", messagetype="S")
     except Exception as e:
         log_exception(request, e)
         return Response.badRequest(request, message=str(e), messagetype="E")
@@ -273,7 +278,7 @@ def detail_event(request,event_uuid):
             data  = first_data(table_name="vcard.events", filters={"vcard_id": vcard_id})
             employee_detail = first_data(table_name="vcard.vcards",filters={'vcard_id':vcard_id})
             type_scan = get_value(table_name="vcard.v_scan_log",filters={'event_id':event_id,},column_name='scan_by_type')
-            total_scan = count_data(table_name="vcard.v_scan_log",filters={'vcard_id':vcard_id,'event_id':event_id,'scan_by_type':'qr'})
+            total_scan = count_data(table_name="vcard.v_scan_log",filters={'vcard_id':vcard_id,'event_id':event_id})
             log_data = get_data(table_name="vcard.v_scan_log",filters={'vcard_id':vcard_id,'event_id':event_id})
             
             data['data_employee'] = employee_detail
@@ -286,4 +291,24 @@ def detail_event(request,event_uuid):
         log_exception(request, e)
         return Response.badRequest(request, message=str(e), messagetype="E")
 
+@jwtRequired
+@csrf_exempt
+def default_profile_pic(request,vcard_uuid):
+    try:
+        validate_method(request, "PUT")
+        with transaction.atomic():
+            vcard_id = get_value(table_name='vcard.vcards',filters={"vcard_uuid":vcard_uuid},column_name='vcard_id')
+            
+            update_data(
+                table_name='vcard.vcards',
+                data={
+                    "picture": 'https://webapi.satnusa.com/img/user.png'
+                },
+                filters={'vcard_id':vcard_id}
+            )
+            
+            return Response.ok(data={'vcard_uuid':vcard_uuid}, message="Detail event telah tampi!", messagetype="S")
+    except Exception as e:
+        log_exception(request, e)
+        return Response.badRequest(request, message=str(e), messagetype="E") 
 
