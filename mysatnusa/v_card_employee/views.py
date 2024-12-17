@@ -37,7 +37,7 @@ def list_vcard(request):
         validate_method(request, "GET")
         with transaction.atomic():
             search = request.GET.get('search', '').lower()
-            department_name = request.GET.get('department_name', '').lower()  # Pastikan menggunakan .lower() untuk pencarian case-insensitive
+            department_name = request.GET.get('department_name', '').lower()
             line_code = request.GET.get('line_code', '').lower()
             position = request.GET.get('position_name', '')
             
@@ -54,7 +54,8 @@ def list_vcard(request):
                     **item,
                     "department_name": get_value(table_name='master.v_employee',filters={'employee_badge':item['employee_badge']},column_name='department_name'),
                     "department_code": get_value(table_name='master.v_employee',filters={'employee_badge':item['employee_badge']},column_name='department_code'),
-                    "line_code": get_value(table_name='master.v_employee',filters={'employee_badge':item['employee_badge']},column_name='line_code')
+                    "line_code": get_value(table_name='master.v_employee',filters={'employee_badge':item['employee_badge']},column_name='line_code'),
+                    "Total_event": count_data(table_name='vcard.events',filters={'vcard_id':item['vcard_id']})
                 })
             
             if search or department_name or line_code:
@@ -110,16 +111,6 @@ def insert_vcard(request):
                 column_id = "vcard_id" 
             )
 
-            # delete_data(table_name="cargo_lift.cargo_lift_assigns",filters={"cargo_lift_user_id": vcard_id})
-            # for i in json_data['cargo_assigns']:
-            #     insert_data(
-            #         table_name="cargo_lift.cargo_lift_assigns", 
-            #         data={
-            #             "cargo_lift_id": i,
-            #             "cargo_lift_user_id": cargo_id,
-            #         },
-            #     )
-            
             vcard_uuid = get_value(table_name='vcard.vcards',filters={'vcard_id':vcard_id},column_name='vcard_uuid')
                             
             return Response.ok(data={"vcard_uuid" : vcard_uuid}, message="Added!", messagetype="S")
@@ -152,6 +143,9 @@ def update_vcard(request, vcard_uuid):
                     "employee_badge": json_data['employee_badge'],
                     "is_active": json_data['is_active'],
                     "position_name": json_data['position_name'],
+                    "updated_at": datetime.datetime.now(),
+                    "updated_by": request.jwt_badge_no,
+                    "updated_by_name": request.jwt_fullname,
                 },
                 filters={
                     "vcard_id": vcard_id,
@@ -249,4 +243,47 @@ def delete_social_media(request, contact_media_uuid):
             return Response.ok(data=contact_media_uuid, message="List data telah tampil", messagetype="S")
     except Exception as e:
         return Response.badRequest(request, message=str(e), messagetype="E")
+    
+@jwtRequired
+@csrf_exempt
+def list_event(request,vcard_uuid):
+    try:
+        validate_method(request, "GET")
+        with transaction.atomic():
+            search = request.GET.get('search', '')
+            vcard_id = get_value(table_name='vcard.vcards',filters={"vcard_uuid":vcard_uuid},column_name="vcard_id")
+            
+            data  = get_data(table_name="vcard.v_event", filters={"vcard_id": vcard_id},search=search,search_columns=['event_name','event_location'],order_by='event_date')
+            
+            pagi = paginate_data(request,data)
+        return Response.ok(data=pagi, message="Deleted!", messagetype="S")
+    except Exception as e:
+        log_exception(request, e)
+        return Response.badRequest(request, message=str(e), messagetype="E")
+    
+@jwtRequired
+@csrf_exempt
+def detail_event(request,event_uuid):
+    try:
+        validate_method(request, "GET")
+        with transaction.atomic():
+            event_id = get_value(table_name='vcard.events',filters={"event_uuid":event_uuid},column_name="event_id")
+            vcard_id = get_value(table_name='vcard.events',filters={"event_id":event_id},column_name="vcard_id")
+            
+            data  = first_data(table_name="vcard.events", filters={"vcard_id": vcard_id})
+            employee_detail = first_data(table_name="vcard.vcards",filters={'vcard_id':vcard_id})
+            type_scan = get_value(table_name="vcard.v_scan_log",filters={'event_id':event_id,},column_name='scan_by_type')
+            total_scan = count_data(table_name="vcard.v_scan_log",filters={'vcard_id':vcard_id,'event_id':event_id,'scan_by_type':'qr'})
+            log_data = get_data(table_name="vcard.v_scan_log",filters={'vcard_id':vcard_id,'event_id':event_id})
+            
+            data['data_employee'] = employee_detail
+            data['category_scan'] = type_scan
+            data['total_scan'] = total_scan
+            data['scan_log'] = log_data
+            
+        return Response.ok(data=data, message="Detail event telah tampi!", messagetype="S")
+    except Exception as e:
+        log_exception(request, e)
+        return Response.badRequest(request, message=str(e), messagetype="E")
+
 
