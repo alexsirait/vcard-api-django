@@ -20,6 +20,8 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from operator import itemgetter
 import base64
+import requests
+
 
 env = environ.Env(
     DEBUG=(bool, False)
@@ -30,7 +32,7 @@ environ.Env.read_env()
 def generate_vcard(request):
     try:
         validate_method(request, "GET")
-        
+
         full_name = "Alex Sirait"
         first_name = "Alex"
         last_name = "Sirait"
@@ -44,34 +46,34 @@ def generate_vcard(request):
         work_email = "SirAyek@example.com"
         url = "https://www.example.com/"
 
-        photo_filename = "tes.jpg"
-        photo_path = os.path.join(settings.MEDIA_ROOT, 'uploads', photo_filename)
+        photo_url = "https://via.placeholder.com/150"  
+        
+        response = requests.get(photo_url)
+        if response.status_code != 200:
+            return HttpResponse("Photo could not be retrieved from the internet", status=400)
 
-        if not os.path.exists(photo_path):
-            return Response.badRequest(request, message="Photo not found", messagetype="E")
-
-        with open(photo_path, "rb") as photo_file:
-            photo_data = photo_file.read()
-            photo_base64 = base64.b64encode(photo_data).decode("utf-8")
+        photo_data = response.content
+        photo_base64 = base64.b64encode(photo_data).decode("utf-8")
 
         vcard_content = f"""
-            BEGIN:VCARD
-            VERSION:3.0
-            FN:{full_name}
-            N:{last_name};{first_name};;;
-            EMAIL:{email}
-            ORG:{org}
-            TITLE:{title}
-            ADR:{adr}
-            TEL;WORK;VOICE:{work_phone}
-            TEL;CELL:{cell_phone}
-            TEL;FAX:{fax_phone}
-            EMAIL;WORK;INTERNET:{work_email}
-            URL:{url}
-            PHOTO;ENCODING=BASE64;TYPE=JPEG:{photo_base64}
-            END:VCARD
+        BEGIN:VCARD
+        VERSION:3.0
+        FN:{full_name}
+        N:{last_name};{first_name};;;
+        EMAIL:{email}
+        ORG:{org}
+        TITLE:{title}
+        ADR:{adr}
+        TEL;WORK;VOICE:{work_phone}
+        TEL;CELL:{cell_phone}
+        TEL;FAX:{fax_phone}
+        EMAIL;WORK;INTERNET:{work_email}
+        URL:{url}
+        PHOTO;ENCODING=BASE64;TYPE=JPEG:{photo_base64}
+        END:VCARD
         """
-        response = HttpResponse(vcard_content, content_type="text/vcard")
+
+        response = HttpResponse(vcard_content.strip(), content_type="text/vcard")
         response['Content-Disposition'] = f'attachment; filename="{full_name}.vcf"'
         return response
 
